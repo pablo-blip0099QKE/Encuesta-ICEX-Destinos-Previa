@@ -567,7 +567,7 @@ function estimateMovement(currentRank, level) {
   // Por encima de 250 sin idioma, el margen de mejora es mínimo
   // porque muchos compañeros también tienen idioma y ya los superan
   if (currentRank > 250) {
-    if (level === 'none') return Math.min(15, 277 - currentRank);
+    if (level === 'none') return Math.min(15, 300 - currentRank);
     if (level === 'B2')   return Math.max(-5, -(currentRank - 260));
     if (level === 'C1')   return Math.max(-15, -(currentRank - 245));
     if (level === 'C2')   return Math.max(-25, -(currentRank - 235));
