@@ -180,7 +180,7 @@ canvas { max-height: 240px; }
     <!-- Ranking table -->
     <div class="card" style="margin-bottom:1.5rem">
       <div class="section-title">Ranking de ciudades por puntuación ponderada</div>
-      <div class="section-sub">1ª preferencia = 3 pts · 2ª = 2 pts · 3ª = 1 pt. Muestra las 20 ciudades más demandadas.</div>
+      <div class="section-sub">1ª preferencia = 3 pts · 2ª = 2 pts · 3ª = 1 pt. Muestra las ciudades más demandadas.</div>
       <table class="rank-table">
         <thead><tr><th>#</th><th>Ciudad</th><th>Puntos</th><th>Votos totales</th><th>Baremo</th></tr></thead>
         <tbody id="rankBody"></tbody>
@@ -419,9 +419,11 @@ function showTooltip(event, country, cities) {
 function hideTooltip(){document.getElementById('tooltip').style.display='none';}
 
 function renderRanking(sorted) {
-  const top20 = sorted.slice(0,20);
-  const max = top20.length?top20[0][1].score:1;
-  document.getElementById('rankBody').innerHTML = top20.map(([c,s],i) => `
+  // 1. Ya no usamos slice. Calculamos el máximo basándonos en 'sorted'
+  const max = sorted.length ? sorted[0][1].score : 1;
+  
+  // 2. Cambiamos top20.map por sorted.map para procesar toda la lista
+  document.getElementById('rankBody').innerHTML = sorted.map(([c,s],i) => `
     <tr><td class="rank-num">${i+1}</td><td>${c}<br><span style="font-size:11px;color:#aaa">${CITY_COUNTRY[c]||''}</span></td><td class="pts-badge">${s.score} pts</td><td style="font-size:13px;color:#555">${s.total} votos</td><td class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(s.score/max*100)}%"></div></td></tr>`).join('');
 }
 
