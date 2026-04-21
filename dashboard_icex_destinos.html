@@ -191,8 +191,8 @@ canvas { max-height: 240px; }
 </div>
 
 <script>
-const SHEET_ID = "16XnLUeXcAj18A3IDgqNsGWzq_tT1WFWBhMW4h-LY3Z4";
-const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+// 1. TU ENLACE DE APPS SCRIPT (Cámbialo por el tuyo)
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXfkFCvnt7iuTbIlyjlMefxBoCkXz2mX7K0ptIW5QD2OY9k5eIY92xfdYM30aTFbGC/exec";
 
 const CITY_COUNTRY = {
   "Abidyán":"Costa de Marfil","Accra":"Ghana","Adís Abeba":"Etiopía","Almaty":"Kazajistán",
@@ -253,26 +253,32 @@ async function loadData() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('content').style.display = 'none';
   try {
-    const res = await fetch(SHEET_URL);
-    const text = await res.text();
-    allData = parseCSV(text);
+    // 2. HACEMOS LA LLAMADA PASANDO "?action=leer"
+    const res = await fetch(SCRIPT_URL + "?action=leer");
+    const jsonMatrix = await res.json();
+    
+    // 3. CONVERTIMOS LA MATRIZ DE GOOGLE SHEETS A OBJETOS ÚTILES
+    // jsonMatrix[0] son las cabeceras, así que leemos desde la fila 1
+    allData = jsonMatrix.slice(1).map(row => ({
+      ts: row[0],
+      ranking: String(row[1]),
+      p1: row[2],
+      p2: row[3],
+      p3: row[4]
+    })).filter(r => r.p1 && r.p2 && r.p3); // Solo guardamos respuestas completas
+
     processData();
     renderAll();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('content').style.display = 'block';
     document.getElementById('lastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
   } catch(e) {
-    document.getElementById('loading').innerHTML = '<span style="color:#c0392b">Error al cargar datos. Asegúrate de que el Sheet es público.</span>';
+    console.error(e);
+    document.getElementById('loading').innerHTML = '<span style="color:#c0392b">Error al cargar datos. Comprueba que el SCRIPT_URL es correcto y está desplegado.</span>';
   }
 }
 
-function parseCSV(text) {
-  const lines = text.trim().split('\n').slice(1);
-  return lines.map(line => {
-    const cols = line.split('","').map(c => c.replace(/^"|"$/g,'').trim());
-    return { ts: cols[0], ranking: cols[1], p1: cols[2], p2: cols[3], p3: cols[4] };
-  }).filter(r => r.p1 && r.p2 && r.p3);
-}
+// (La función parseCSV ya no es necesaria)
 
 function processData() {
   cityStats = {};
@@ -419,23 +425,29 @@ function renderRanking(sorted) {
     <tr><td class="rank-num">${i+1}</td><td>${c}<br><span style="font-size:11px;color:#aaa">${CITY_COUNTRY[c]||''}</span></td><td class="pts-badge">${s.score} pts</td><td style="font-size:13px;color:#555">${s.total} votos</td><td class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(s.score/max*100)}%"></div></td></tr>`).join('');
 }
 
+// 4. ERRORES TIPOGRÁFICOS CORREGIDOS AQUÍ (El gráfico de continentes no cargaba)
 function renderContChart(v) {
   const l = Object.keys(v).sort((a,b)=>v[b]-v[a]);
   if(contChart) contChart.destroy();
   contChart = new Chart(document.getElementById('contChart'),{
     type:'doughnut',
-    data:{labels:l,datasets:[{data:l.map(x=>v\x5wx]),backgroundColor:['#1565c0','#27ae60','#e67e22','#8e44ad','#c0392b','#16a085'],borderWidth:2,borderColor:'#fff'}]},
+    data:{labels:l,datasets:[{data:l.map(x=>v[x]),backgroundColor:['#1565c0','#27ae60','#e67e22','#8e44ad','#c0392b','#16a085'],borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{font:{size:12},padding:12}}}}
   });
 }
 
+// 5. ERRORES TIPOGRÁFICOS CORREGIDOS AQUÍ (El filtro de ciudades daba error)
 function renderFilters() {
   const rs = document.getElementById('f-ranking');
   const cs = document.getElementById('f-city');
   rs.innerHTML = '<option value="">Selecciona…</option>';
   cs.innerHTML = '<option value="">Selecciona…</option>';
   for(let i=1;i<=300;i+=10){
-    const e=Math.min(i+9,300);const o(document.createElement('option');o.value=`${i}-${e}`;o.textContent=`${i} – ${e}`rs.appendChild(o);
+    const e = Math.min(i+9,300);
+    const o = document.createElement('option');
+    o.value = `${i}-${e}`;
+    o.textContent = `${i} – ${e}`;
+    rs.appendChild(o);
   }
   Object.keys(cityStats).sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cs.appendChild(o);});
   [rs,cs].forEach(el=>el.addEventListener('change',runFilter));
@@ -445,7 +457,7 @@ function runFilter() {
   const mr = document.getElementById('f-ranking').value;
   const mc = document.getElementById('f-city').value;
   const el = document.getElementById('filter-result');
-  if(!mr || !mc){el.innerHTML='<div style="color:#aaa;font-size:13px">Selecciona tu tramo y ciudad para ver el análisis.</div>';return;]}
+  if(!mr || !mc){el.innerHTML='<div style="color:#aaa;font-size:13px">Selecciona tu tramo y ciudad para ver el análisis.</div>';return;}
   const ms = parseInt(mr.split('-')[0]);
   const st = cityStats[mc];
   if(!st){el.innerHTML=`<div class="fr-city">${mc}</div><div class="fr-stat">Sin votos aún.</div>`;return;}
