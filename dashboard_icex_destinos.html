@@ -238,10 +238,10 @@ const CONTINENT = {
   "Polonia":"Europa","Bulgaria":"Europa","Lituania":"Europa","Croacia":"Europa",
   "Colombia":"América","Paraguay":"América","Argentina":"América","Brasil":"América",
   "Bolivia":"América","Perú":"América","Chile":"América","Uruguay":"América",
-  "Ecuador":"América","México":"América","Guatemala":"América","El Salvador":"América","San José":"América",
+  "Ecuador":"América","México":"América","Guatemala":"América","El Salvador":"América","Costa Rica":"América",
   "República Dominicana":"América","Cuba":"América","Panamá":"América",
   "Puerto Rico":"América","Estados Unidos":"América","Canadá":"América",
-  "Venezuela":"América","Houston":"América",
+  "Venezuela":"América",
   "Australia":"Oceanía","Nueva Zelanda":"Oceanía",
 };
 
@@ -377,7 +377,7 @@ function drawD3(world, countryScore, countryCities, maxCountryScore) {
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
   const countries = topojson.feature(world, world.objects.countries);
-  const im = {"276":"Alemania","250":"Francia","380":"Italia","724":"España","826":"Reino Unido","620":"Portugal","528":"Países Bajos","056":"Bélgica","756":"Suiza","040":"Austria","752":"Suecia","578":"Noruega","208":"Dinamarca","246":"Finlandia","616":"Polonia","203":"República Checa","348":"Hungría","642":"Rumanía","100":"Bulgaria","300":"Grecia","688":"Serbia","191":"Croacia","703":"Eslovaquia","440":"Lituania","372":"Irlanda","840":"Estados Unidos","124":"Canadá","484":"México","076":"Brasil","032":"Argentina","170":"Colombia","152":"Chile","604":"Perú","218":"Ecuador","068":"Bolivia","858":"Uruguay","600":"Paraguay","320":"Guatemala","222":"El Salvador","192":"Cuba","591":"Panamá","214":"República Dominicana","156":"China","392":"Japón","410":"Corea del Sur","356":"India","360":"Indonesia","764":"Tailandia","704":"Vietnam","458":"Malasia","608":"Filipinas","702":"Singapur","158":"Taiwán","792":"Turquía","682":"Arabia Saudí","784":"Emiratos Árabes Unidos","414":"Kuwait","634":"Catar","400":"Jordania","364":"Irán","512":"Omán","860":"Uzbekistán","398":"Kazajistán","504":"Marruecos","012":"Argelia","788":"Túnez","818":"Egipto","566":"Nigeria","686":"Senegal","288":"Ghana","384":"Costa de Marfil","231":"Etiopía","404":"Kenia","024":"Angola","710":"Sudáfrica","036":"Australia","554":"Nueva Zelanda"};
+  const im = {"276":"Alemania","250":"Francia","380":"Italia","724":"España","826":"Reino Unido","188":"Costa Rica","620":"Portugal","528":"Países Bajos","056":"Bélgica","756":"Suiza","040":"Austria","752":"Suecia","578":"Noruega","208":"Dinamarca","246":"Finlandia","616":"Polonia","203":"República Checa","348":"Hungría","642":"Rumanía","100":"Bulgaria","300":"Grecia","688":"Serbia","191":"Croacia","703":"Eslovaquia","440":"Lituania","372":"Irlanda","840":"Estados Unidos","124":"Canadá","484":"México","076":"Brasil","032":"Argentina","170":"Colombia","152":"Chile","604":"Perú","218":"Ecuador","068":"Bolivia","858":"Uruguay","600":"Paraguay","320":"Guatemala","222":"El Salvador","192":"Cuba","591":"Panamá","214":"República Dominicana","156":"China","392":"Japón","410":"Corea del Sur","356":"India","360":"Indonesia","764":"Tailandia","704":"Vietnam","458":"Malasia","608":"Filipinas","702":"Singapur","158":"Taiwán","792":"Turquía","682":"Arabia Saudí","784":"Emiratos Árabes Unidos","414":"Kuwait","634":"Catar","400":"Jordania","364":"Irán","512":"Omán","860":"Uzbekistán","398":"Kazajistán","504":"Marruecos","012":"Argelia","788":"Túnez","818":"Egipto","566":"Nigeria","686":"Senegal","288":"Ghana","384":"Costa de Marfil","231":"Etiopía","404":"Kenia","024":"Angola","710":"Sudáfrica","036":"Australia","554":"Nueva Zelanda"};
   svg.append('rect').attr('width',W).attr('height',H).attr('fill','#e8f4fd').attr('rx',8);
   svg.selectAll('path').data(countries.features).join('path')
     .attr('d',path)
