@@ -562,32 +562,50 @@ function runFilter() {
   el.innerHTML=`<div class="fr-city">${mc}</div><div class="fr-stat">Total que la votaron: <strong>${st.total}</strong></div><div class="fr-stat">Con mejor ranking que tú: <strong style="color:${col}">${rivals}</strong></div><div class="fr-stat">En tu tramo (${mr}): <strong>${sr}</strong></div><div style="margin-top:8px;font-size:12px;color:${col}">${msg}</div>`;
 }
 function estimateMovement(currentRank, level) {
+  
+  // Caso especial: posiciones muy bajas en el ranking
+  // Por encima de 250 sin idioma, el margen de mejora es mínimo
+  // porque muchos compañeros también tienen idioma y ya los superan
+  if (currentRank > 250) {
+    if (level === 'none') return Math.min(15, 277 - currentRank);
+    if (level === 'B2')   return Math.max(-5, -(currentRank - 260));
+    if (level === 'C1')   return Math.max(-15, -(currentRank - 245));
+    if (level === 'C2')   return Math.max(-25, -(currentRank - 235));
+  }
+
   if (level === 'none') {
     const drop = 62;
     return Math.min(drop, 277 - currentRank);
   }
+
   if (level === 'B2') {
     let base;
     if (currentRank <= 50)       base = -6;
     else if (currentRank <= 100) base = -15;
     else if (currentRank <= 150) base = -41;
     else if (currentRank <= 200) base = -46;
-    else                          base = -39;
+    else if (currentRank <= 250) base = -39;
+    else                          base = -5; // ya cubierto arriba pero por seguridad
     return Math.max(base, -(currentRank - 1));
   }
+
   if (level === 'C1') {
     let base;
     if (currentRank <= 50)       base = -16;
-    else if (currentRank <= 100) base = -56;
+    else if (currentRank <= 100) base = -50;
     else if (currentRank <= 150) base = -81;
     else if (currentRank <= 200) base = -103;
-    else                          base = -100;
+    else if (currentRank <= 250) base = -100;
+    else                          base = -15;
     return Math.max(base, -(currentRank - 1));
   }
+
   if (level === 'C2') {
+    if (currentRank > 250) return Math.max(-25, -(currentRank - 235));
     const base = -Math.round(currentRank * 0.75);
     return Math.max(base, -(currentRank - 1));
   }
+
   return 0;
 }
 
