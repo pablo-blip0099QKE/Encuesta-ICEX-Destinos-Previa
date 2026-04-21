@@ -68,7 +68,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .filter-inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
 .filter-row { display: flex; gap: 8px; align-items: center; }
 .filter-row label { font-size: 13px; color: #555; min-width: 90px; }
-.filter-row select { flex: 1; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; background: #fafafa; }
+.filter-row select, .filter-row input { flex: 1; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; background: #fafafa; }
 .filter-result { background: #f5f4f0; border-radius: 8px; padding: 12px; font-size: 13px; min-height: 80px; }
 .fr-city { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
 .fr-stat { color: #555; margin-bottom: 2px; }
@@ -120,20 +120,18 @@ canvas { max-height: 240px; }
   <div id="loading"><span class="spinner"></span>Cargando respuestas…</div>
   <div id="content" style="display:none">
 
-    <!-- Guide -->
     <div class="guide">
       <div>
         <div class="guide-title">Cómo leer este dashboard</div>
         <div class="guide-items">
-          <div class="guide-item"><div class="guide-swatch" style="background:linear-gradient(to right,#e8f4fd,#1565c0)"></div> Intensidad de demanda en el mapa (más oscuro = más votado)</div>
+          <div class="guide-item"><div class="guide-swatch" style="background:linear-gradient(to right,#e8f4fd,#1565c0)"></div> Intensidad de demanda en el mapa</div>
           <div class="guide-item"><div class="guide-dot" style="background:#1565c0"></div> Pasar el ratón sobre un país muestra detalle completo</div>
           <div class="guide-item"><div class="guide-dot" style="background:#27ae60"></div> Puntuación: 3 pts por 1ª opción · 2 pts por 2ª · 1 pt por 3ª</div>
-          <div class="guide-item"><div class="guide-dot" style="background:#e67e22"></div> Herramienta de competencia: introduce tu tramo y ciudad para ver cuántos rivales tienes</div>
+          <div class="guide-item"><div class="guide-dot" style="background:#e67e22"></div> Herramienta de competencia</div>
         </div>
       </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats">
       <div class="stat"><div class="stat-label">Respuestas recibidas</div><div class="stat-value" id="s-total">—</div><div class="stat-sub">de 300 estudiantes</div></div>
       <div class="stat"><div class="stat-label">Participación</div><div class="stat-value" id="s-pct">—</div><div class="stat-sub">del total del máster</div></div>
@@ -141,7 +139,6 @@ canvas { max-height: 240px; }
       <div class="stat"><div class="stat-label">Continente favorito</div><div class="stat-value" id="s-cont" style="font-size:16px;margin-top:4px">—</div><div class="stat-sub" id="s-cont-pct"></div></div>
     </div>
 
-    <!-- Map -->
     <div class="map-wrap">
       <div class="section-title">Mapa mundial de demanda</div>
       <div class="section-sub">Cada país coloreado según votos recibidos. Pasa el ratón para ver el desglose completo por tramos de ranking.</div>
@@ -153,9 +150,7 @@ canvas { max-height: 240px; }
       </div>
     </div>
 
-    <!-- Two columns -->
     <div class="two-col">
-      <!-- Competition tool -->
       <div class="card">
         <div class="section-title">Herramienta de competencia</div>
         <div class="section-sub">Descubre cuántos compañeros con mejor ranking que tú quieren tu misma ciudad.</div>
@@ -174,7 +169,6 @@ canvas { max-height: 240px; }
         </div>
       </div>
 
-      <!-- Continent chart -->
       <div class="card">
         <div class="section-title">Demanda por continente</div>
         <div class="section-sub">Distribución de votos ponderados por región geográfica.</div>
@@ -193,11 +187,11 @@ canvas { max-height: 240px; }
   <div class="filter-inputs">
     <div class="filter-row">
       <label>Tu posición actual</label>
-      <input type="number" id="sim-ranking" min="1" max="" placeholder="Ej: 120" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+      <input type="number" id="sim-ranking" min="1" max="" placeholder="Ej: 120">
     </div>
     <div class="filter-row">
       <label>Nivel de idioma</label>
-      <select id="sim-idioma" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+      <select id="sim-idioma">
         <option value="">Selecciona…</option>
         <option value="none">Sin idioma acreditado</option>
         <option value="B2">B2</option>
@@ -210,9 +204,8 @@ canvas { max-height: 240px; }
   <button onclick="runSimulator()" style="padding:9px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:1rem">Calcular estimación</button>
 
   <div id="sim-result" style="background:#f5f4f0;border-radius:8px;padding:14px;font-size:13px;display:none"></div>
+  </div>
 
-
-    <!-- Ranking table -->
     <div class="card" style="margin-bottom:1.5rem">
       <div class="section-title">Ranking de ciudades por puntuación ponderada</div>
       <div class="section-sub">1ª preferencia = 3 pts · 2ª = 2 pts · 3ª = 1 pt. Muestra las ciudades más demandadas.</div>
@@ -226,8 +219,8 @@ canvas { max-height: 240px; }
 </div>
 
 <script>
-// 1. TU ENLACE DE APPS SCRIPT (Cámbialo por el tuyo)
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXfkFCvnt7iuTbIlyjlMefxBoCkXz2mX7K0ptIW5QD2OY9k5eIY92xfdYM30aTFbGC/exec";
+// 1. NUEVA URL: Ahora apunta al archivo CSV en tu mismo repositorio de GitHub
+const DATA_URL = "./datos.csv";
 
 const CITY_COUNTRY = {
   "Abidyán":"Costa de Marfil","Accra":"Ghana","Adís Abeba":"Etiopía","Almaty":"Kazajistán",
@@ -302,17 +295,43 @@ let allData = [];
 let cityStats = {};
 let contChart = null;
 
+// 2. FUNCIÓN PARA LEER EL CSV DE GOOGLE SHEETS DE FORMA NATIVA Y SEGURA
+function parseCSV(str) {
+  const firstLine = str.split('\n')[0] || '';
+  const delimiter = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
+  
+  const arr = [];
+  let quote = false;
+  let row = [], col = '';
+  
+  for (let c = 0; c < str.length; c++) {
+    let cc = str[c], nc = str[c+1];
+    if (cc === '"' && quote && nc === '"') { col += cc; ++c; continue; }
+    if (cc === '"') { quote = !quote; continue; }
+    if (cc === delimiter && !quote) { row.push(col.trim()); col = ''; continue; }
+    if (cc === '\n' && !quote) { row.push(col.trim()); arr.push(row); col = ''; row = []; continue; }
+    if (cc === '\r' && !quote) { continue; }
+    col += cc;
+  }
+  if (col) row.push(col.trim());
+  if (row.length > 0) arr.push(row);
+  return arr;
+}
+
 async function loadData() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('content').style.display = 'none';
   try {
-    // 2. HACEMOS LA LLAMADA PASANDO "?action=leer"
-    const res = await fetch(SCRIPT_URL + "?action=leer");
-    const jsonMatrix = await res.json();
+    // 3. HACEMOS LA LLAMADA AL ARCHIVO LOCAL EN GITHUB
+    const res = await fetch(DATA_URL + "?v=" + new Date().getTime()); // El getTime evita que el navegador guarde el CSV antiguo en caché
+    if (!res.ok) throw new Error("No se pudo cargar el archivo CSV");
+    const csvText = await res.text();
     
-    // 3. CONVERTIMOS LA MATRIZ DE GOOGLE SHEETS A OBJETOS ÚTILES
-    // jsonMatrix[0] son las cabeceras, así que leemos desde la fila 1
-    allData = jsonMatrix.slice(1).map(row => ({
+    // 4. CONVERTIMOS EL TEXTO CSV A NUESTRA MATRIZ
+    const csvMatrix = parseCSV(csvText);
+    
+    // csvMatrix[0] son las cabeceras, leemos desde la fila 1
+    allData = csvMatrix.slice(1).map(row => ({
       ts: row[0],
       ranking: String(row[1]),
       p1: row[2],
@@ -327,11 +346,9 @@ async function loadData() {
     document.getElementById('lastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
   } catch(e) {
     console.error(e);
-    document.getElementById('loading').innerHTML = '<span style="color:#c0392b">Error al cargar datos. Comprueba que el SCRIPT_URL es correcto y está desplegado.</span>';
+    document.getElementById('loading').innerHTML = '<span style="color:#c0392b">Error al cargar datos. Comprueba que el archivo datos.csv existe en la misma carpeta del repositorio.</span>';
   }
 }
-
-// (La función parseCSV ya no es necesaria)
 
 function processData() {
   cityStats = {};
@@ -352,7 +369,7 @@ function processData() {
 function renderAll() {
   const total = allData.length;
   document.getElementById('s-total').textContent = total;
-  document.getElementById('s-pct').textContent = Math.round(total/*100) + '%';
+  document.getElementById('s-pct').textContent = Math.round((total/300)*100) + '%';
 
   const sorted = Object.entries(cityStats).sort((a,b) => b[1].score - a[1].score);
   if (sorted.length) {
@@ -518,7 +535,6 @@ function renderRanking(sorted) {
   }).join('');
 }
 
-// 4. ERRORES TIPOGRÁFICOS CORREGIDOS AQUÍ (El gráfico de continentes no cargaba)
 function renderContChart(v) {
   const l = Object.keys(v).sort((a,b)=>v[b]-v[a]);
   if(contChart) contChart.destroy();
@@ -529,7 +545,6 @@ function renderContChart(v) {
   });
 }
 
-// 5. ERRORES TIPOGRÁFICOS CORREGIDOS AQUÍ (El filtro de ciudades daba error)
 function renderFilters() {
   const rs = document.getElementById('f-ranking');
   const cs = document.getElementById('f-city');
@@ -561,46 +576,38 @@ function runFilter() {
   const msg=rivals===0?'¡Eres el único sin rivales por delante!':rivals<=3?'Competencia moderada.':'Alta competencia — muchos rivales delante.';
   el.innerHTML=`<div class="fr-city">${mc}</div><div class="fr-stat">Total que la votaron: <strong>${st.total}</strong></div><div class="fr-stat">Con mejor ranking que tú: <strong style="color:${col}">${rivals}</strong></div><div class="fr-stat">En tu tramo (${mr}): <strong>${sr}</strong></div><div style="margin-top:8px;font-size:12px;color:${col}">${msg}</div>`;
 }
-function estimateMovement(currentRank, level) {
 
-  // Sin idioma: baja ~62 puestos (sin límite de 277)
+function estimateMovement(currentRank, level) {
   if (level === 'none') {
     return Math.min(62, 300 - currentRank);
   }
-
-  // Posiciones muy bajas (>250): mejora mínima aunque tengan idioma
-  // porque muchos compañeros también lo tienen
   if (currentRank > 250) {
     if (level === 'B2')  return Math.max(-5,  -(currentRank - 255));
     if (level === 'C1')  return Math.max(-20, -(currentRank - 240));
     if (level === 'C2')  return Math.max(-35, -(currentRank - 230));
   }
-
   if (level === 'B2') {
     let base;
     if (currentRank <= 50)       base = -1;
     else if (currentRank <= 100) base = -15;
     else if (currentRank <= 150) base = -41;
     else if (currentRank <= 200) base = -46;
-    else                          base = -39;
+    else                         base = -39;
     return Math.max(base, -(currentRank - 1));
   }
-
   if (level === 'C1') {
     let base;
     if (currentRank <= 50)       base = -16;
     else if (currentRank <= 100) base = -56;
     else if (currentRank <= 150) base = -81;
     else if (currentRank <= 200) base = -103;
-    else                          base = -100;
+    else                         base = -100;
     return Math.max(base, -(currentRank - 1));
   }
-
   if (level === 'C2') {
     const base = -Math.round(currentRank * 0.75);
     return Math.max(base, -(currentRank - 1));
   }
-
   return 0;
 }
 
