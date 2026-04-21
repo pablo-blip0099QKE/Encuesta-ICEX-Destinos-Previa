@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preferencias de Destino ICEX 2025</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+  .card { background: #fff; border-radius: 16px; padding: 2.5rem; max-width: 560px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  h1 { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; line-height: 1.5; }
+  .anon { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #555; background: #f0faf5; border-radius: 8px; padding: 8px 12px; margin-bottom: 2rem; }
+  .anon-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+  .step { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 1rem; }
+  .field { margin-bottom: 1.25rem; }
+  label { display: block; font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 5px; }
+  .hint { font-size: 12px; color: #888; margin-bottom: 6px; }
+  input[type=number], select { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; color: #1a1a1a; background: #fafafa; outline: none; transition: border 0.15s; }
+  input[type=number]:focus, select:focus { border-color: #888; background: #fff; }
+  hr { border: none; border-top: 1px solid #f0f0f0; margin: 1.75rem 0; }
+  button { width: 100%; padding: 13px; font-size: 15px; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 10px; cursor: pointer; margin-top: 0.5rem; transition: background 0.15s; }
+  button:hover { background: #333; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  .err { background: #fff5f5; color: #c0392b; border: 1px solid #fcc; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 1rem; display: none; }
+  .success { display: none; text-align: center; padding: 2rem 1rem; }
+  .success .check { width: 56px; height: 56px; background: #f0faf5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+  .success .check svg { width: 28px; height: 28px; }
+  .success h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .success p { font-size: 14px; color: #666; }
+  .badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 20px; background: #f0f0f0; color: #555; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="formView">
+    <h1>Preferencias de destino ICEX 2025</h1>
+    <p class="subtitle">Ayuda a tus compañeros a conocer la demanda real de cada ciudad. Solo se guardan tu posición y tus preferencias.</p>
+    <div class="anon"><div class="anon-dot"></div>Encuesta anónima — no se recogen datos personales</div>
+
+    <div class="step">Paso 1 — Tu posición en el ranking</div>
+    <div class="field">
+      <label for="ranking">¿En qué tramo estás?</label>
+      <div class="hint">Selecciona el rango que corresponde a tu posición en el ranking.</div>
+      <select id="ranking">
+        <option value="">Selecciona tu tramo…</option>
+      </select>
+    </div>
+
+    <hr>
+    <div class="step">Paso 2 — Tus 3 destinos preferidos</div>
+    <div class="field">
+      <label for="p1"><span class="badge">1ª opción</span><br>Primera preferencia</label>
+      <select id="p1"><option value="">Selecciona una ciudad…</option></select>
+    </div>
+    <div class="field">
+      <label for="p2"><span class="badge">2ª opción</span><br>Segunda preferencia</label>
+      <select id="p2"><option value="">Selecciona una ciudad…</option></select>
+    </div>
+    <div class="field">
+      <label for="p3"><span class="badge">3ª opción</span><br>Tercera preferencia</label>
+      <select id="p3"><option value="">Selecciona una ciudad…</option></select>
+    </div>
+
+    <button id="btn" onclick="submitSurvey()">Enviar respuesta</button>
+    <div class="err" id="errMsg"></div>
+  </div>
+
+  <div class="success" id="successView">
+    <div class="check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h2>¡Respuesta enviada!</h2>
+    <p>Tus preferencias se han guardado correctamente.<br>Gracias por participar.</p>
+  </div>
+</div>
+
+<script>
+const CITIES = ["Abidyán","Accra","Adís Abeba","Almaty","Ammán","Ankara","Argel","Asunción","Atenas","Bangkok","Belgrado","Berlín","Berna","Bogotá","Brasilia","Bratislava","Bruselas","Bucarest","Budapest","Buenos Aires","Cantón","Casablanca","Chicago","Copenhague","Dakar","Doha","Dubái","Dublín","Düsseldorf","El Cairo","Estambul","Estocolmo","Guatemala","Helsinki","Ho Chi Minh","Hong Kong","Johannesburgo","Kuala Lumpur","Kuwait","La Habana","La Haya","La Paz","Lagos","Lima","Lisboa","Londres","Los Ángeles","Luanda","Manila","Mascate","México","Miami","Milán","Montevideo","Mumbai","Nairobi","Nueva Delhi","Nueva York","Oslo","Ottawa","Panamá","París","Pekín","Praga","Quito","Rabat","Riyadh","Roma","San Juan","San Salvador","Santiago de Chile","Santo Domingo","São Paulo","Seúl","Shanghái","Sidney","Singapur","Sofía","Taipéi","Tashkent","Teherán","Tokio","Toronto","Túnez","Varsovia","Viena","Vilnius","Washington","Wellington","Yakarta","Zagreb"];
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzDLEMOKRhq7G1MvBFO0BWMWyee8teN8eRQYp_AyEE7ZfT4OK26MhaEdh9ISIzeE4hR/exec";
+
+// Generar tramos de ranking de 10 en 10
+const rankSel = document.getElementById('ranking');
+for (let i = 1; i <= 300; i += 10) {
+  const end = Math.min(i + 9, 300);
+  const opt = document.createElement('option');
+  opt.value = `${i}-${end}`;
+  opt.textContent = `${i} – ${end}`;
+  rankSel.appendChild(opt);
+}
+
+// Poblar selectores de ciudades
+['p1','p2','p3'].forEach(id => {
+  const sel = document.getElementById(id);
+  CITIES.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+});
+
+async function submitSurvey() {
+  const ranking = document.getElementById('ranking').value;
+  const p1 = document.getElementById('p1').value;
+  const p2 = document.getElementById('p2').value;
+  const p3 = document.getElementById('p3').value;
+  const errEl = document.getElementById('errMsg');
+  errEl.style.display = 'none';
+
+  if (!ranking) { showErr('Selecciona tu tramo en el ranking.'); return; }
+  if (!p1 || !p2 || !p3) { showErr('Selecciona tus 3 preferencias de ciudad.'); return; }
+  if (new Set([p1,p2,p3]).size < 3) { showErr('Las 3 preferencias deben ser ciudades distintas.'); return; }
+
+  const btn = document.getElementById('btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  try {
+    await fetch(SCRIPT_URL + '?' + new URLSearchParams({ ranking, p1, p2, p3, ts: new Date().toISOString() }), { method: 'GET', mode: 'no-cors' });
+    document.getElementById('formView').style.display = 'none';
+    document.getElementById('successView').style.display = 'block';
+  } catch(e) {
+    showErr('Error de conexión. Inténtalo de nuevo.');
+    btn.disabled = false; btn.textContent = 'Enviar respuesta';
+  }
+}
+
+function showErr(msg) { const e = document.getElementById('errMsg'); e.textContent = msg; e.style.display = 'block'; }
+</script>
+</body>
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ICEX 2025 — Demanda de Destinos</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; }
+
+/* Header */
+.header { background: #1a1a1a; color: #fff; padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 18px; font-weight: 600; }
+.header .meta { font-size: 13px; color: #aaa; }
+.refresh-btn { background: #333; border: 1px solid #555; color: #fff; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+.refresh-btn:hover { background: #444; }
+
+/* Layout */
+.main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+/* Guide banner */
+.guide { background: #fff; border: 1px solid #e8e4d9; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 2rem; flex-wrap: wrap; align-items: center; }
+.guide-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+.guide-items { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.guide-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; }
+.guide-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.guide-swatch { width: 50px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* Stat cards */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+.stat { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; border: 1px solid #eee; }
+.stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.stat-value { font-size: 24px; font-weight: 600; color: #1a1a1a; }
+.stat-sub { font-size: 12px; color: #aaa; margin-top: 2px; }
+
+/* Map section */
+.map-wrap { background: #fff; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #eee; }
+.section-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.section-sub { font-size: 13px; color: #888; margin-bottom: 1rem; }
+#worldMap { width: 100%; height: 420px; position: relative; }
+#worldMap svg { width: 100%; height: 100%; }
+
+/* Legend */
+.legend { display: flex; align-items: center; gap: 8px; margin-top: 0.75rem; font-size: 12px; color: #888; }
+.legend-bar { height: 10px; width: 200px; border-radius: 5px; background: linear-gradient(to right, #e8f4fd, #1565c0); }
+
+/* Tooltip */
+#tooltip { position: fixed; background: #1a1a1a; color: #fff; border-radius: 10px; padding: 12px 16px; font-size: 13px; pointer-events: none; display: none; z-index: 9999; max-width: 260px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+#tooltip .tt-city { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+#tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 3px; color: #ccc; }
+#tooltip .tt-row span:last-child { color: #fff; font-weight: 500; }
+#tooltip .tt-divider { border-top: 1px solid #333; margin: 8px 0; }
+#tooltip .tt-ranges { font-size: 12px; }
+#tooltip .tt-range-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 2px; color: #aaa; }
+#tooltip .tt-range-row span:last-child { color: #7eb8f5; }
+
+/* Filters & charts */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+.card { background: #fff; border-radius: 12px; padding: 1.25rem; border: 1px solid #eee; }
+
+/* Filter tool */
+.filter-inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
+.filter-row { display: flex; gap: 8px; align-items: center; }
+.filter-row label { font-size: 13px; color: #555; min-width: 90px; }
+.filter-row select { flex: 1; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; background: #fafafa; }
+.filter-result { background: #f5f4f0; border-radius: 8px; padding: 12px; font-size: 13px; min-height: 80px; }
+.fr-city { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.fr-stat { color: #555; margin-bottom: 2px; }
+.fr-warn { color: #c0392b; font-size: 12px; }
+.fr-ok { color: #27ae60; font-size: 12px; }
+
+/* Ranking table */
+.rank-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rank-table th { text-align: left; padding: 6px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #eee; }
+.rank-table td { padding: 7px 8px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-num { font-weight: 600; color: #888; width: 28px; }
+.rank-bar-wrap { width: 80px; }
+.rank-bar { height: 6px; border-radius: 3px; background: #1565c0; }
+.pts-badge { font-size: 12px; font-weight: 600; color: #1565c0; }
+
+/* Continent chart */
+canvas { max-height: 240px; }
+
+/* Loading */
+#loading { text-align: center; padding: 3rem; color: #888; font-size: 14px; }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid #ddd; border-top-color: #1a1a1a; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Dashboard ICEX 2025 — Demanda de Destinos</h1>
+    <div class="meta" id="lastUpdate">Cargando datos…</div>
+  </div>
+  <button class="refresh-btn" onclick="loadData()">↺ Actualizar</button>
+</div>
+
+<div id="tooltip">
+  <div class="tt-city" id="tt-city"></div>
+  <div class="tt-row"><span>Total votos</span><span id="tt-total"></span></div>
+  <div class="tt-row"><span>Puntuación ponderada</span><span id="tt-score"></span></div>
+  <div class="tt-row"><span>1ª preferencia</span><span id="tt-p1"></span></div>
+  <div class="tt-row"><span>2ª preferencia</span><span id="tt-p2"></span></div>
+  <div class="tt-row"><span>3ª preferencia</span><span id="tt-p3"></span></div>
+  <div class="tt-divider"></div>
+  <div class="tt-ranges" id="tt-ranges"></div>
+</div>
+
+<div class="main">
+  <div id="loading"><span class="spinner"></span>Cargando respuestas…</div>
+  <div id="content" style="display:none">
+
+    <!-- Guide -->
+    <div class="guide">
+      <div>
+        <div class="guide-title">Cómo leer este dashboard</div>
+        <div class="guide-items">
+          <div class="guide-item"><div class="guide-swatch" style="background:linear-gradient(to right,#e8f4fd,#1565c0)"></div> Intensidad de demanda en el mapa (más oscuro = más votado)</div>
+          <div class="guide-item"><div class="guide-dot" style="background:#1565c0"></div> Pasar el ratón sobre un país muestra detalle completo</div>
+          <div class="guide-item"><div class="guide-dot" style="background:#27ae60"></div> Puntuación: 3 pts por 1ª opción · 2 pts por 2ª · 1 pt por 3ª</div>
+          <div class="guide-item"><div class="guide-dot" style="background:#e67e22"></div> Herramienta de competencia: introduce tu tramo y ciudad para ver cuántos rivales tienes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Respuestas recibidas</div><div class="stat-value" id="s-total">—</div><div class="stat-sub">de 300 estudiantes</div></div>
+      <div class="stat"><div class="stat-label">Participación</div><div class="stat-value" id="s-pct">—</div><div class="stat-sub">del total del máster</div></div>
+      <div class="stat"><div class="stat-label">Ciudad más demandada</div><div class="stat-value" id="s-top" style="font-size:16px;margin-top:4px">—</div><div class="stat-sub" id="s-top-pts"></div></div>
+      <div class="stat"><div class="stat-label">Continente favorito</div><div class="stat-value" id="s-cont" style="font-size:16px;margin-top:4px">—</div><div class="stat-sub" id="s-cont-pct"></div></div>
+    </div>
+
+    <!-- Map -->
+    <div class="map-wrap">
+      <div class="section-title">Mapa mundial de demanda</div>
+      <div class="section-sub">Cada país coloreado según votos recibidos. Pasa el ratón para ver el desglose completo por tramos de ranking.</div>
+      <div id="worldMap"></div>
+      <div class="legend">
+        <span>Menos demandado</span>
+        <div class="legend-bar"></div>
+        <span>Más demandado</span>
+      </div>
+    </div>
+
+    <!-- Two columns -->
+    <div class="two-col">
+      <!-- Competition tool -->
+      <div class="card">
+        <div class="section-title">Herramienta de competencia</div>
+        <div class="section-sub">Descubre cuántos compañeros con mejor ranking que tú quieren tu misma ciudad.</div>
+        <div class="filter-inputs">
+          <div class="filter-row">
+            <label>Tu tramo</label>
+            <select id="f-ranking"><option value="">Selecciona…</option></select>
+          </div>
+          <div class="filter-row">
+            <label>Ciudad</label>
+            <select id="f-city"><option value="">Selecciona…</option></select>
+          </div>
+        </div>
+        <div class="filter-result" id="filter-result">
+          <div style="color:#aaa;font-size:13px">Selecciona tu tramo y ciudad para ver el análisis.</div>
+        </div>
+      </div>
+
+      <!-- Continent chart -->
+      <div class="card">
+        <div class="section-title">Demanda por continente</div>
+        <div class="section-sub">Distribución de votos ponderados por región geográfica.</div>
+        <canvas id="contChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Ranking table -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="section-title">Ranking de ciudades por puntuación ponderada</div>
+      <div class="section-sub">1ª preferencia = 3 pts · 2ª = 2 pts · 3ª = 1 pt. Muestra las 20 ciudades más demandadas.</div>
+      <table class="rank-table">
+        <thead><tr><th>#</th><th>Ciudad</th><th>Puntos</th><th>Votos totales</th><th>Baremo</th></tr></thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SHEET_ID = "16XnLUeXcAj18A3IDgqNsGWzq_tT1WFWBhMW4h-LY3Z4";
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+const CITY_COUNTRY = {
+  "Abidyán":"Costa de Marfil","Accra":"Ghana","Adís Abeba":"Etiopía","Almaty":"Kazajistán",
+  "Ammán":"Jordania","Ankara":"Turquía","Argel":"Argelia","Asunción":"Paraguay",
+  "Atenas":"Grecia","Bangkok":"Tailandia","Belgrado":"Serbia","Berlín":"Alemania",
+  "Berna":"Suiza","Bogotá":"Colombia","Brasilia":"Brasil","Bratislava":"Eslovaquia",
+  "Bruselas":"Bélgica","Bucarest":"Rumanía","Budapest":"Hungría","Buenos Aires":"Argentina",
+  "Cantón":"China","Casablanca":"Marruecos","Chicago":"Estados Unidos","Copenhague":"Dinamarca",
+  "Dakar":"Senegal","Doha":"Catar","Dubái":"Emiratos Árabes Unidos","Dublín":"Irlanda",
+  "Düsseldorf":"Alemania","El Cairo":"Egipto","Estambul":"Turquía","Estocolmo":"Suecia",
+  "Guatemala":"Guatemala","Helsinki":"Finlandia","Ho Chi Minh":"Vietnam","Hong Kong":"China",
+  "Johannesburgo":"Sudáfrica","Kuala Lumpur":"Malasia","Kuwait":"Kuwait","La Habana":"Cuba",
+  "La Haya":"Países Bajos","La Paz":"Bolivia","Lagos":"Nigeria","Lima":"Perú",
+  "Lisboa":"Portugal","Londres":"Reino Unido","Los Ángeles":"Estados Unidos","Luanda":"Angola",
+  "Manila":"Filipinas","Mascate":"Omán","México":"México","Miami":"Estados Unidos",
+  "Milán":"Italia","Montevideo":"Uruguay","Mumbai":"India","Nairobi":"Kenia",
+  "Nueva Delhi":"India","Nueva York":"Estados Unidos","Oslo":"Noruega","Ottawa":"Canadá",
+  "Panamá":"Panamá","París":"Francia","Pekín":"China","Praga":"República Checa",
+  "Quito":"Ecuador","Rabat":"Marruecos","Riyadh":"Arabia Saudí","Roma":"Italia",
+  "San Juan":"Puerto Rico","San Salvador":"El Salvador","Santiago de Chile":"Chile",
+  "Santo Domingo":"República Dominicana","São Paulo":"Brasil","Seúl":"Corea del Sur",
+  "Shanghái":"China","Sidney":"Australia","Singapur":"Singapur","Sofía":"Bulgaria",
+  "Taipéi":"Taiwán","Tashkent":"Uzbekistán","Teherán":"Irán","Tokio":"Japón",
+  "Toronto":"Canadá","Túnez":"Túnez","Varsovia":"Polonia","Viena":"Austria",
+  "Vilnius":"Lituania","Washington":"Estados Unidos","Wellington":"Nueva Zelanda",
+  "Yakarta":"Indonesia","Zagreb":"Croacia"
+};
+
+const CONTINENT = {
+  "Costa de Marfil":"África","Ghana":"África","Etiopía":"África","Senegal":"África",
+  "Nigeria":"África","Kenia":"África","Angola":"África","Sudáfrica":"África",
+  "Marruecos":"África","Argelia":"África","Egipto":"África","Túnez":"África","Luanda":"África",
+  "Kazajistán":"Asia","Jordania":"Asia","Turquía":"Asia","Tailandia":"Asia","China":"Asia",
+  "Vietnam":"Asia","India":"Asia","Japón":"Asia","Corea del Sur":"Asia","Malasia":"Asia",
+  "Kuwait":"Asia","Qatar":"Asia","Catar":"Asia","Emiratos Árabes Unidos":"Asia",
+  "Arabia Saudí":"Asia","Irán":"Asia","Filipinas":"Asia","Indonesia":"Asia",
+  "Singapur":"Asia","Taiwán":"Asia","Uzbekistán":"Asia","Omán":"Asia","Bangladesh":"Asia",
+  "Alemania":"Europa","Suiza":"Europa","Eslovaquia":"Europa","Bélgica":"Europa",
+  "Rumanía":"Europa","Hungría":"Europa","Serbia":"Europa","Grecia":"Europa",
+  "Dinamarca":"Europa","Irlanda":"Europa","Suecia":"Europa","Finlandia":"Europa",
+  "Países Bajos":"Europa","Portugal":"Europa","Reino Unido":"Europa","Italia":"Europa",
+  "Noruega":"Europa","Francia":"Europa","República Checa":"Europa","Austria":"Europa",
+  "Polonia":"Europa","Bulgaria":"Europa","Lituania":"Europa","Croacia":"Europa",
+  "Colombia":"América","Paraguay":"América","Argentina":"América","Brasil":"América",
+  "Bolivia":"América","Perú":"América","Chile":"América","Uruguay":"América",
+  "Ecuador":"América","México":"América","Guatemala":"América","El Salvador":"América",
+  "República Dominicana":"América","Cuba":"América","Panamá":"América",
+  "Puerto Rico":"América","Estados Unidos":"América","Canadá":"América",
+  "Venezuela":"América",
+  "Australia":"Oceanía","Nueva Zelanda":"Oceanía",
+};
+
+let allData = [];
+let cityStats = {};
+let contChart = null;
+
+async function loadData() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+  try {
+    const res = await fetch(SHEET_URL);
+    const text = await res.text();
+    allData = parseCSV(text);
+    processData();
+    renderAll();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    document.getElementById('lastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
+  } catch(e) {
+    document.getElementById('loading').innerHTML = '<span style="color:#c0392b">Error al cargar datos. Asegúrate de que el Sheet es público.</span>';
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').slice(1);
+  return lines.map(line => {
+    const cols = line.split('","').map(c => c.replace(/^"|"$/g,'').trim());
+    return { ts: cols[0], ranking: cols[1], p1: cols[2], p2: cols[3], p3: cols[4] };
+  }).filter(r => r.p1 && r.p2 && r.p3);
+}
+
+function processData() {
+  cityStats = {};
+  allData.forEach(r => {
+    [r.p1, r.p2, r.p3].forEach((city, i) => {
+      if (!city) return;
+      if (!cityStats[city]) cityStats[city] = { total:0, p1:0, p2:0, p3:0, score:0, ranges:{} };
+      cityStats[city].total++;
+      if (i===0) { cityStats[city].p1++; cityStats[city].score+=3; }
+      if (i===1) { cityStats[city].p2++; cityStats[city].score+=2; }
+      if (i===2) { cityStats[city].p3++; cityStats[city].score+=1; }
+      const rk = r.ranking || 'Desconocido';
+      cityStats[city].ranges[rk] = (cityStats[city].ranges[rk]||0)+1;
+    });
+  });
+}
+
+function renderAll() {
+  const total = allData.length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-pct').textContent = Math.round(total/300*100) + '%';
+
+  const sorted = Object.entries(cityStats).sort((a,b) => b[1].score - a[1].score);
+  if (sorted.length) {
+    document.getElementById('s-top').textContent = sorted[0][0];
+    document.getElementById('s-top-pts').textContent = sorted[0][1].score + ' pts ponderados';
+  }
+
+  const contVotes = {};
+  Object.entries(cityStats).forEach(([city, s]) => {
+    const country = CITY_COUNTRY[city];
+    const cont = CONTINENT[country] || 'Otro';
+    contVotes[cont] = (contVotes[cont]||0) + s.score;
+  });
+  const topCont = Object.entries(contVotes).sort((a,b)=>b[1]-a[1])[0];
+  if (topCont) {
+    document.getElementById('s-cont').textContent = topCont[0];
+    const contTotal = Object.values(contVotes).reduce((a,b)=>a+b,0);
+    document.getElementById('s-cont-pct').textContent = Math.round(topCont[1]/contTotal*100) + '% de los votos';
+  }
+
+  renderMap(sorted);
+  renderRanking(sorted);
+  renderContChart(contVotes);
+  renderFilters();
+}
+
+function getColor(score, maxScore) {
+  if (!score) return '#f0f0f0';
+  const t = Math.pow(score / maxScore, 0.5);
+  const r = Math.round(232 - t*(232-21));
+  const g = Math.round(244 - t*(244-101));
+  const b = Math.round(253 - t*(253-192));
+  return `rgb(${r},${g},${b})`;
+}
+
+function renderMap(sorted) {
+  const countryScore = {};
+  const countryCities = {};
+  Object.entries(cityStats).forEach(([city, s]) => {
+    const country = CITY_COUNTRY[city];
+    if (!country) return;
+    countryScore[country] = (countryScore[country]||0) + s.score;
+    if (!countryCities[country]) countryCities[country] = [];
+    countryCities[country].push({ city, ...s });
+  });
+  const maxCountryScore = Math.max(...Object.values(countryScore), 1);
+
+  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(r => r.json())
+    .then(world => renderD3Map(world, countryScore, countryCities, maxCountryScore))
+    .catch(() => {
+      document.getElementById('worldMap').innerHTML = '<div style="padding:2rem;text-align:center;color:#888;font-size:13px">Mapa no disponible. Para activarlo sube el archivo a un servidor público como GitHub Pages.</div>';
+    });
+}
+
+function renderD3Map(world, countryScore, countryCities, maxCountryScore) {
+  const mapEl = document.getElementById('worldMap');
+  mapEl.innerHTML = '';
+  const s1 = document.createElement('script');
+  s1.src = 'https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js';
+  s1.onload = () => {
+    const s2 = document.createElement('script');
+    s2.src = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js';
+    s2.onload = () => drawD3(world, countryScore, countryCities, maxCountryScore);
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+}
+
+function drawD3(world, countryScore, countryCities, maxCountryScore) {
+  const mapEl = document.getElementById('worldMap');
+  const W = mapEl.clientWidth || 900;
+  const H = 420;
+  const svg = d3.select('#worldMap').append('svg').attr('width', W).attr('height', H);
+  const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
+  const path = d3.geoPath().projection(proj);
+  const countries = topojson.feature(world, world.objects.countries);
+  const im = {"276":"Alemania","250":"Francia","380":"Italia","724":"España","826":"Reino Unido","620":"Portugal","528":"Países Bajos","056":"Bélgica","756":"Suiza","040":"Austria","752":"Suecia","578":"Noruega","208":"Dinamarca","246":"Finlandia","616":"Polonia","203":"República Checa","348":"Hungría","642":"Rumanía","100":"Bulgaria","300":"Grecia","688":"Serbia","191":"Croacia","703":"Eslovaquia","440":"Lituania","372":"Irlanda","840":"Estados Unidos","124":"Canadá","484":"México","076":"Brasil","032":"Argentina","170":"Colombia","152":"Chile","604":"Perú","218":"Ecuador","068":"Bolivia","858":"Uruguay","600":"Paraguay","320":"Guatemala","222":"El Salvador","192":"Cuba","591":"Panamá","214":"República Dominicana","156":"China","392":"Japón","410":"Corea del Sur","356":"India","360":"Indonesia","764":"Tailandia","704":"Vietnam","458":"Malasia","608":"Filipinas","702":"Singapur","158":"Taiwán","792":"Turquía","682":"Arabia Saudí","784":"Emiratos Árabes Unidos","414":"Kuwait","634":"Catar","400":"Jordania","364":"Irán","512":"Omán","860":"Uzbekistán","398":"Kazajistán","504":"Marruecos","012":"Argelia","788":"Túnez","818":"Egipto","566":"Nigeria","686":"Senegal","288":"Ghana","384":"Costa de Marfil","231":"Etiopía","404":"Kenia","024":"Angola","710":"Sudáfrica","036":"Australia","554":"Nueva Zelanda"};
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','#e8f4fd').attr('rx',8);
+  svg.selectAll('path').data(countries.features).join('path')
+    .attr('d',path)
+    .attr('fill',d => {
+      const n = im[String(d.id).padStart(3,'0')];
+      return getColor(n?(countryScore[n]||0):0, maxCountryScore);
+    })
+    .attr('stroke','#fff').attr('stroke-width',0.5)
+    .on('mousemove',function(event,d){
+      const n = im[String(d.id).padStart(3,'0')];
+      if(!n || !countryScore[n]) return;
+      showTooltip(event,n,countryCities[n]||[]);
+    })
+    .on('mouseleave',hideTooltip);
+}
+
+function showTooltip(event, country, cities) {
+  if (!cities.length) return;
+  const tt = document.getElementById('tooltip');
+  const top = cities.sort((a,b)=>b.score-a.score)[0];
+  document.getElementById('tt-city').textContent = top.city+' ('+country+')';
+  document.getElementById('tt-total').textContent = top.total+' votos';
+  document.getElementById('tt-score').textContent = top.score+' pts';
+  document.getElementById('tt-p1').textContent = top.p1;
+  document.getElementById('tt-p2').textContent = top.p2;
+  document.getElementById('tt-p3').textContent = top.p3;
+  let html = '<div style="margin-bottom:4px;color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:0.05em">Tramos de ranking que la votaron</div>';
+  Object.entries(top.ranges).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).forEach(([r,c])=>{
+    html += `<div class="tt-range-row"><span>${r}</span><span>${c} persona${c>1?'s':''}</span></div>`;
+  });
+  if(cities.length>1) html += `<div style="margin-top:6px;color:#888;font-size:11px">+${cities.length-1} más en este país</div>`;
+  document.getElementById('tt-ranges').innerHTML = html;
+  tt.style.display='block';
+  tt.style.left=(event.clientX+16)+'px';
+  tt.style.top=(event.clientY-20)+'px';
+  const r=tt.getBoundingClientRect();
+  if(r.right>window.innerWidth-10) tt.style.left=(event.clientX-r.width-16)+'px';
+}
+function hideTooltip(){document.getElementById('tooltip').style.display='none';}
+
+function renderRanking(sorted) {
+  const top20 = sorted.slice(0,20);
+  const max = top20.length?top20[0][1].score:1;
+  document.getElementById('rankBody').innerHTML = top20.map(([c,s],i) => `
+    <tr><td class="rank-num">${i+1}</td><td>${c}<br><span style="font-size:11px;color:#aaa">${CITY_COUNTRY[c]||''}</span></td><td class="pts-badge">${s.score} pts</td><td style="font-size:13px;color:#555">${s.total} votos</td><td class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(s.score/max*100)}%"></div></td></tr>`).join('');
+}
+
+function renderContChart(v) {
+  const l = Object.keys(v).sort((a,b)=>v[b]-v[a]);
+  if(contChart) contChart.destroy();
+  contChart = new Chart(document.getElementById('contChart'),{
+    type:'doughnut',
+    data:{labels:l,datasets:[{data:l.map(x=>v\x5wx]),backgroundColor:['#1565c0','#27ae60','#e67e22','#8e44ad','#c0392b','#16a085'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{font:{size:12},padding:12}}}}
+  });
+}
+
+function renderFilters() {
+  const rs = document.getElementById('f-ranking');
+  const cs = document.getElementById('f-city');
+  rs.innerHTML = '<option value="">Selecciona…</option>';
+  cs.innerHTML = '<option value="">Selecciona…</option>';
+  for(let i=1;i<=300;i+=10){
+    const e=Math.min(i+9,300);const o(document.createElement('option');o.value=`${i}-${e}`;o.textContent=`${i} – ${e}`rs.appendChild(o);
+  }
+  Object.keys(cityStats).sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cs.appendChild(o);});
+  [rs,cs].forEach(el=>el.addEventListener('change',runFilter));
+}
+
+function runFilter() {
+  const mr = document.getElementById('f-ranking').value;
+  const mc = document.getElementById('f-city').value;
+  const el = document.getElementById('filter-result');
+  if(!mr || !mc){el.innerHTML='<div style="color:#aaa;font-size:13px">Selecciona tu tramo y ciudad para ver el análisis.</div>';return;]}
+  const ms = parseInt(mr.split('-')[0]);
+  const st = cityStats[mc];
+  if(!st){el.innerHTML=`<div class="fr-city">${mc}</div><div class="fr-stat">Sin votos aún.</div>`;return;}
+  let rivals=0;
+  allData.forEach(r=>{if([r.p1,r.p2,r.p3].includes(mc)){const t=parseInt((r.ranking||'999').split('-')[0]);if(t<ms)rivals++;}});
+  const sr=st.ranges[mr]||0;
+  const col=rivals===0?'#27ae60':rivals<=3?'#e67e22':'#c0392b';
+  const msg=rivals===0?'¡Eres el único sin rivales por delante!':rivals<=3?'Competencia moderada.':'Alta competencia — muchos rivales delante.';
+  el.innerHTML=`<div class="fr-city">${mc}</div><div class="fr-stat">Total que la votaron: <strong>${st.total}</strong></div><div class="fr-stat">Con mejor ranking que tú: <strong style="color:${col}">${rivals}</strong></div><div class="fr-stat">En tu tramo (${mr}): <strong>${sr}</strong></div><div style="margin-top:8px;font-size:12px;color:${col}">${msg}</div>`;
+}
+
+loadData();
+</script>
+</body>
+</html>
