@@ -182,7 +182,7 @@ canvas { max-height: 240px; }
       <div class="section-title">Ranking de ciudades por puntuación ponderada</div>
       <div class="section-sub">1ª preferencia = 3 pts · 2ª = 2 pts · 3ª = 1 pt. Muestra las ciudades más demandadas.</div>
       <table class="rank-table">
-        <thead><tr><th>#</th><th>Ciudad</th><th>Puntos</th><th>Votos totales</th><th>Baremo</th></tr></thead>
+        <thead><tr><th>#</th><th>Ciudad</th><th>Puntos</th><th>Votos</th><th>Plazas</th><th>Ratio</th><th>Baremo</th></tr></thead>
         <tbody id="rankBody"></tbody>
       </table>
     </div>
@@ -243,6 +243,24 @@ const CONTINENT = {
   "Puerto Rico":"América","Estados Unidos":"América","Canadá":"América",
   "Venezuela":"América",
   "Australia":"Oceanía","Nueva Zelanda":"Oceanía",
+};
+  
+const PLAZAS = {
+  "Washington":7,"Nueva York":6,"Londres":6,"Pekín":6,"México":6,"Nueva Delhi":6,
+  "Shanghái":5,"Miami":5,"Chicago":5,"Sidney":5,"Bogotá":5,"Casablanca":5,"Los Ángeles":5,
+  "Tokio":4,"Bangkok":4,"Bruselas":4,"Berlín":4,"Copenhague":4,"Manila":4,"São Paulo":4,
+  "París":4,"Yakarta":4,"Dubái":4,"Brasilia":4,"El Cairo":4,"Ankara":4,"Milán":4,
+  "Singapur":3,"Abidyán":3,"Buenos Aires":3,"Berna":3,"Hong Kong":3,"Rabat":3,
+  "Ho Chi Minh":3,"Roma":3,"Cantón":3,"Nairobi":3,"Panamá":3,"Düsseldorf":3,
+  "Seúl":3,"Taipéi":3,"Santiago de Chile":3,"Argel":3,"La Habana":3,"Lima":3,
+  "Doha":3,"Toronto":3,"Riyadh":3,"Ottawa":3,"Mumbai":3,"Guatemala":3,
+  "Johannesburgo":3,"Dakar":3,"Dublín":3,"Praga":3,"Lagos":3,"Varsovia":3,
+  "Kuala Lumpur":2,"Túnez":2,"San Juan":2,"Montevideo":2,"Wellington":2,
+  "Santo Domingo":2,"Tashkent":2,"La Haya":2,"Accra":2,"Luanda":2,
+  "Estambul":2,"Kuwait":2,"Mascate":2,"Quito":2,"Estocolmo":2,"Atenas":2,
+  "Oslo":2,"Ammán":2,"Bratislava":2,"Belgrado":2,"Bucarest":2,
+  "San Salvador":1,"Almaty":1,"Budapest":1,"La Paz":1,"Viena":1,
+  "Helsinki":1,"Asunción":1,"Lisboa":1,"Sofía":1,"Vilnius":1,"Zagreb":1
 };
 
 let allData = [];
@@ -419,12 +437,26 @@ function showTooltip(event, country, cities) {
 function hideTooltip(){document.getElementById('tooltip').style.display='none';}
 
 function renderRanking(sorted) {
-  // 1. Ya no usamos slice. Calculamos el máximo basándonos en 'sorted'
   const max = sorted.length ? sorted[0][1].score : 1;
-  
-  // 2. Cambiamos top20.map por sorted.map para procesar toda la lista
-  document.getElementById('rankBody').innerHTML = sorted.map(([c,s],i) => `
-    <tr><td class="rank-num">${i+1}</td><td>${c}<br><span style="font-size:11px;color:#aaa">${CITY_COUNTRY[c]||''}</span></td><td class="pts-badge">${s.score} pts</td><td style="font-size:13px;color:#555">${s.total} votos</td><td class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(s.score/max*100)}%"></div></td></tr>`).join('');
+  document.getElementById('rankBody').innerHTML = sorted.map(([c,s],i) => {
+    const plazas = PLAZAS[c] || '—';
+    const ratio = (plazas !== '—' && s.total > 0) 
+      ? (s.total / plazas).toFixed(1) 
+      : '—';
+    const ratioColor = ratio === '—' ? '#aaa' 
+      : ratio >= 3 ? '#c0392b' 
+      : ratio >= 1.5 ? '#e67e22' 
+      : '#27ae60';
+    return `<tr>
+      <td class="rank-num">${i+1}</td>
+      <td>${c}<br><span style="font-size:11px;color:#aaa">${CITY_COUNTRY[c]||''}</span></td>
+      <td class="pts-badge">${s.score} pts</td>
+      <td style="font-size:13px;color:#555">${s.total} votos</td>
+      <td style="font-size:13px;color:#555;text-align:center">${plazas}</td>
+      <td style="font-size:13px;font-weight:600;color:${ratioColor};text-align:center">${ratio}x</td>
+      <td class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(s.score/max*100)}%"></div></td>
+    </tr>`;
+  }).join('');
 }
 
 // 4. ERRORES TIPOGRÁFICOS CORREGIDOS AQUÍ (El gráfico de continentes no cargaba)
