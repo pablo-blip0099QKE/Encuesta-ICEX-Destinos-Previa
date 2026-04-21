@@ -193,7 +193,7 @@ canvas { max-height: 240px; }
   <div class="filter-inputs">
     <div class="filter-row">
       <label>Tu posición actual</label>
-      <input type="number" id="sim-ranking" min="1" max="300" placeholder="Ej: 120" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+      <input type="number" id="sim-ranking" min="1" max="" placeholder="Ej: 120" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
     </div>
     <div class="filter-row">
       <label>Nivel de idioma</label>
@@ -352,7 +352,7 @@ function processData() {
 function renderAll() {
   const total = allData.length;
   document.getElementById('s-total').textContent = total;
-  document.getElementById('s-pct').textContent = Math.round(total/300*100) + '%';
+  document.getElementById('s-pct').textContent = Math.round(total/*100) + '%';
 
   const sorted = Object.entries(cityStats).sort((a,b) => b[1].score - a[1].score);
   if (sorted.length) {
@@ -585,7 +585,7 @@ function estimateMovement(currentRank, level) {
     else if (currentRank <= 150) base = -41;
     else if (currentRank <= 200) base = -46;
     else if (currentRank <= 250) base = -39;
-    else                          base = -5; // ya cubierto arriba pero por seguridad
+    else                          base = -39; // ya cubierto arriba pero por seguridad
     return Math.max(base, -(currentRank - 1));
   }
 
@@ -596,7 +596,7 @@ function estimateMovement(currentRank, level) {
     else if (currentRank <= 150) base = -81;
     else if (currentRank <= 200) base = -103;
     else if (currentRank <= 250) base = -100;
-    else                          base = -15;
+    else                          base = -90;
     return Math.max(base, -(currentRank - 1));
   }
 
@@ -626,7 +626,7 @@ function runSimulator() {
   }
 
   const movement = estimateMovement(rankInput, idioma);
-  const estimatedRank = Math.max(1, Math.min(277, rankInput + movement));
+  const estimatedRank = Math.max(1, Math.min(300, rankInput + movement));
   const puestos = Math.abs(movement);
   const color = movement < 0 ? '#27ae60' : movement > 0 ? '#c0392b' : '#888';
   const arrow = movement < 0 ? '↑' : movement > 0 ? '↓' : '→';
