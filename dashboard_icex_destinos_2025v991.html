@@ -182,6 +182,36 @@ canvas { max-height: 240px; }
       </div>
     </div>
 
+    <div class="card" style="margin-bottom:1.5rem">
+  <div class="section-title">Simulador de posición final</div>
+  <div class="section-sub">Estima tu posición en el ranking una vez se incluya la nota de idioma. <strong>Basado en datos reales de la 49ª promoción.</strong></div>
+  
+  <div style="background:#fff8e8;border:1px solid #f0d080;border-radius:8px;padding:10px 14px;font-size:12px;color:#7a5c00;margin-bottom:1.25rem">
+    ⚠️ Estimación basada en los movimientos medios observados el año pasado. Tu posición final dependerá de las notas del resto de compañeros.
+  </div>
+
+  <div class="filter-inputs">
+    <div class="filter-row">
+      <label>Tu posición actual</label>
+      <input type="number" id="sim-ranking" min="1" max="300" placeholder="Ej: 120" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+    </div>
+    <div class="filter-row">
+      <label>Nivel de idioma</label>
+      <select id="sim-idioma" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+        <option value="">Selecciona…</option>
+        <option value="none">Sin idioma acreditado</option>
+        <option value="B2">B2</option>
+        <option value="C1">C1</option>
+        <option value="C2">C2</option>
+      </select>
+    </div>
+  </div>
+
+  <button onclick="runSimulator()" style="padding:9px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:1rem">Calcular estimación</button>
+
+  <div id="sim-result" style="background:#f5f4f0;border-radius:8px;padding:14px;font-size:13px;display:none"></div>
+
+
     <!-- Ranking table -->
     <div class="card" style="margin-bottom:1.5rem">
       <div class="section-title">Ranking de ciudades por puntuación ponderada</div>
@@ -531,7 +561,104 @@ function runFilter() {
   const msg=rivals===0?'¡Eres el único sin rivales por delante!':rivals<=3?'Competencia moderada.':'Alta competencia — muchos rivales delante.';
   el.innerHTML=`<div class="fr-city">${mc}</div><div class="fr-stat">Total que la votaron: <strong>${st.total}</strong></div><div class="fr-stat">Con mejor ranking que tú: <strong style="color:${col}">${rivals}</strong></div><div class="fr-stat">En tu tramo (${mr}): <strong>${sr}</strong></div><div style="margin-top:8px;font-size:12px;color:${col}">${msg}</div>`;
 }
+function estimateMovement(currentRank, level) {
+  if (level === 'none') {
+    const drop = 62;
+    return Math.min(drop, 277 - currentRank);
+  }
+  if (level === 'B2') {
+    let base;
+    if (currentRank <= 50)       base = -1;
+    else if (currentRank <= 100) base = -15;
+    else if (currentRank <= 150) base = -41;
+    else if (currentRank <= 200) base = -46;
+    else                          base = -39;
+    return Math.max(base, -(currentRank - 1));
+  }
+  if (level === 'C1') {
+    let base;
+    if (currentRank <= 50)       base = -16;
+    else if (currentRank <= 100) base = -56;
+    else if (currentRank <= 150) base = -81;
+    else if (currentRank <= 200) base = -103;
+    else                          base = -100;
+    return Math.max(base, -(currentRank - 1));
+  }
+  if (level === 'C2') {
+    const base = -Math.round(currentRank * 0.75);
+    return Math.max(base, -(currentRank - 1));
+  }
+  return 0;
+}
 
+function runSimulator() {
+  const rankInput = parseInt(document.getElementById('sim-ranking').value);
+  const idioma = document.getElementById('sim-idioma').value;
+  const resultEl = document.getElementById('sim-result');
+
+  if (!rankInput || rankInput < 1 || rankInput > 300) {
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<span style="color:#c0392b">Introduce una posición válida entre 1 y 300.</span>';
+    return;
+  }
+  if (!idioma) {
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<span style="color:#c0392b">Selecciona tu nivel de idioma.</span>';
+    return;
+  }
+
+  const movement = estimateMovement(rankInput, idioma);
+  const estimatedRank = Math.max(1, Math.min(277, rankInput + movement));
+  const puestos = Math.abs(movement);
+  const color = movement < 0 ? '#27ae60' : movement > 0 ? '#c0392b' : '#888';
+  const arrow = movement < 0 ? '↑' : movement > 0 ? '↓' : '→';
+  const texto = movement < 0 ? `subirías ~${puestos} puestos` : movement > 0 ? `bajarías ~${puestos} puestos` : 'sin cambios estimados';
+
+  let citiesReachable = [];
+  if (Object.keys(cityStats).length > 0) {
+    Object.entries(cityStats).forEach(([city, s]) => {
+      let betterRanked = 0;
+      allData.forEach(r => {
+        if ([r.p1, r.p2, r.p3].includes(city)) {
+          const theirStart = parseInt((r.ranking || '999').split('-')[0]);
+          if (theirStart < estimatedRank) betterRanked++;
+        }
+      });
+      const plazas = PLAZAS[city] || 0;
+      if (plazas > 0 && betterRanked < plazas) {
+        citiesReachable.push({ city, betterRanked, plazas });
+      }
+    });
+    citiesReachable.sort((a,b) => a.betterRanked - b.betterRanked);
+  }
+
+  const topCities = citiesReachable.slice(0, 5);
+  let citiesHtml = '';
+  if (topCities.length > 0) {
+    citiesHtml = `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e0e0e0">
+        <div style="font-weight:600;margin-bottom:4px">Ciudades más alcanzables con tu posición estimada</div>
+        <div style="font-size:11px;color:#888;margin-bottom:8px">Ciudades donde hay menos rivales delante que plazas disponibles</div>
+        ${topCities.map(c => `
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0">
+            <span style="font-weight:500">${c.city}</span>
+            <span style="font-size:12px;color:#555">${c.betterRanked} rivales · ${c.plazas} plazas</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+      <div style="font-size:38px;font-weight:700;color:${color};line-height:1">${arrow} ${estimatedRank}</div>
+      <div>
+        <div style="font-size:13px;color:#555">Posición estimada tras idioma</div>
+        <div style="font-size:12px;color:${color};font-weight:600;margin-top:2px">${texto}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:#888">Posición actual: <strong style="color:#1a1a1a">${rankInput}</strong> → Estimada: <strong style="color:${color}">${estimatedRank}</strong></div>
+    ${citiesHtml}`;
+}
 loadData();
 </script>
 </body>
