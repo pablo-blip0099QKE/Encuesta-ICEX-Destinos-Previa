@@ -611,6 +611,7 @@ function estimateMovement(currentRank, level) {
     else if (currentRank <= 150) base = -41;
     else if (currentRank <= 200) base = -46;
     else                          base = -39;
+    // No puede quedar en posición menor que 1
     return Math.max(base, -(currentRank - 1));
   }
   if (level === 'C1') {
@@ -629,37 +630,36 @@ function estimateMovement(currentRank, level) {
   return 0;
 }
 
-function estimateTicsMovement(notaTics, currentRank) {
-  // Sin nota introducida → no calculamos efecto TICS
-  if (isNaN(notaTics) || notaTics === null || notaTics === undefined || document.getElementById('sim-tics').value === '') return 0;
+function estimateTicsMovement(notaTics, currentRank, ticsFieldEmpty) {
+  // Si el campo está vacío, no aplicamos ningún efecto TICS
+  if (ticsFieldEmpty) return 0;
 
   // Factor de densidad según zona del ranking
-  // (más impacto en zona media donde hay más competidores por punto)
   let factor;
   if (currentRank <= 50)        factor = 0.5;
   else if (currentRank <= 150)  factor = 1.2;
   else if (currentRank <= 250)  factor = 1.0;
   else                          factor = 0.6;
 
-  if (notaTics < 50) {
-    // SUSPENSO o NO PRESENTADO:
-    // El 74.7% del grupo aprobó con media ~+0.29 pts extra
-    // Tú te quedas en 0 → pierdes posiciones relativas
-    // Estimamos ~12-15 puestos de bajada en zona media
+  if (isNaN(notaTics) || notaTics < 50) {
+    // SUSPENSO o NO PRESENTADO: baja puestos
+    // El 74.7% aprobó con +0.29 pts extra → tú te quedas atrás
     const drop = Math.round(13 * factor);
-    return Math.min(drop, 300 - currentRank); // no puede pasar de 300
+    return Math.min(drop, 300 - currentRank);
   }
 
-  // APROBADO: sube puestos respecto a los suspensos
+  // APROBADO: sube puestos
   // Escala: nota 50 → +3 puestos, nota 100 → +28 puestos
   const movBase = Math.round(3 + (notaTics - 50) / 50 * 25);
   return -Math.round(movBase * factor);
 }
-
+  
 function runSimulator() {
   const rankInput = parseInt(document.getElementById('sim-ranking').value);
   const idioma = document.getElementById('sim-idioma').value;
-  const ticsInput = parseFloat(document.getElementById('sim-tics').value);
+  const ticsRaw = document.getElementById('sim-tics').value;
+  const ticsFieldEmpty = ticsRaw.trim() === '';
+  const ticsInput = ticsFieldEmpty ? NaN : parseFloat(ticsRaw);
   const resultEl = document.getElementById('sim-result');
 
   if (!rankInput || rankInput < 1 || rankInput > 300) {
@@ -675,8 +675,8 @@ function runSimulator() {
 
   const movIdioma = estimateMovement(rankInput, idioma);
   const rankAfterIdioma = Math.max(1, Math.min(300, rankInput + movIdioma));
-  
-  const movTics = estimateTicsMovement(ticsInput, rankAfterIdioma);
+
+  const movTics = estimateTicsMovement(ticsInput, rankAfterIdioma, ticsFieldEmpty);
   const estimatedRank = Math.max(1, Math.min(300, rankAfterIdioma + movTics));
 
   const totalMov = estimatedRank - rankInput;
@@ -686,11 +686,20 @@ function runSimulator() {
               : totalMov > 0 ? `bajarías ~${Math.abs(totalMov)} puestos en total`
               : 'sin cambios estimados';
 
-  // Desglose
   const idiomaLabel = idioma === 'none' ? 'Sin idioma' : idioma;
-  const ticsLabel = !ticsInput || ticsInput < 50
-    ? 'Sin efecto (<50)'
-    : `Nota ${ticsInput} → ~${Math.abs(movTics)} puestos arriba`;
+
+  // Texto TICS para el desglose
+  let ticsDesglose, ticsColor;
+  if (ticsFieldEmpty) {
+    ticsDesglose = 'No introducida';
+    ticsColor = '#aaa';
+  } else if (isNaN(ticsInput) || ticsInput < 50) {
+    ticsDesglose = `Suspenso (${isNaN(ticsInput)?'—':ticsInput}) → +${movTics} puestos (baja)`;
+    ticsColor = '#c0392b';
+  } else {
+    ticsDesglose = `Nota ${ticsInput} → ${movTics} puestos → ${estimatedRank}`;
+    ticsColor = '#27ae60';
+  }
 
   let citiesReachable = [];
   if (Object.keys(cityStats).length > 0) {
@@ -742,11 +751,11 @@ function runSimulator() {
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
         <span style="color:#555">Idioma (${idiomaLabel})</span>
-        <strong style="color:${movIdioma<=0?'#27ae60':'#c0392b'}">${movIdioma<=0?'':'+'}${movIdioma} puestos → ${rankAfterIdioma}</strong>
+        <strong style="color:${movIdioma < 0 ? '#27ae60' : movIdioma > 0 ? '#c0392b' : '#888'}">${movIdioma === 0 ? 'Sin cambio' : (movIdioma > 0 ? '+' : '') + movIdioma + ' puestos → ' + rankAfterIdioma}</strong>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
         <span style="color:#555">TICS</span>
-        <strong style="color:${movTics<0?'#27ae60':'#888'}">${movTics<0?`${movTics} puestos → ${estimatedRank}`:'Sin efecto'}</strong>
+        <strong style="color:${ticsColor}">${ticsDesglose}</strong>
       </div>
       <div style="border-top:1px solid #eee;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-size:13px">
         <span style="font-weight:600">Posición estimada</span>
