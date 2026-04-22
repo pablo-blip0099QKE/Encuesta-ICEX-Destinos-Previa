@@ -176,35 +176,53 @@ canvas { max-height: 240px; }
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:1.5rem">
+   <div class="card" style="margin-bottom:1.5rem">
   <div class="section-title">Simulador de posición final</div>
-  <div class="section-sub">Estima tu posición en el ranking una vez se incluya la nota de idioma. <strong>Basado en datos reales de la 49ª promoción.</strong></div>
-  
+  <div class="section-sub">Estima tu posición en el ranking una vez se incluyan idioma y TICS. <strong>Basado en datos reales de la 49ª y 50ª promoción.</strong></div>
+
   <div style="background:#fff8e8;border:1px solid #f0d080;border-radius:8px;padding:10px 14px;font-size:12px;color:#7a5c00;margin-bottom:1.25rem">
-    ⚠️ Estimación basada en los movimientos medios observados el año pasado. Tu posición final dependerá de las notas del resto de compañeros.
+    ⚠️ Estimación orientativa basada en movimientos medios observados en promociones anteriores. Tu posición final depende de las notas del resto de compañeros.
   </div>
 
-  <div class="filter-inputs">
-    <div class="filter-row">
-      <label>Tu posición actual</label>
-      <input type="number" id="sim-ranking" min="1" max="" placeholder="Ej: 120">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Datos del máster</div>
+      <div class="filter-inputs">
+        <div class="filter-row">
+          <label>Tu posición actual</label>
+          <input type="number" id="sim-ranking" min="1" max="300" placeholder="Ej: 120" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+        </div>
+        <div class="filter-row">
+          <label>Nivel de idioma</label>
+          <select id="sim-idioma" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+            <option value="">Selecciona…</option>
+            <option value="none">Sin idioma acreditado</option>
+            <option value="B2">B2</option>
+            <option value="C1">C1</option>
+            <option value="C2">C2</option>
+          </select>
+        </div>
+      </div>
     </div>
-    <div class="filter-row">
-      <label>Nivel de idioma</label>
-      <select id="sim-idioma">
-        <option value="">Selecciona…</option>
-        <option value="none">Sin idioma acreditado</option>
-        <option value="B2">B2</option>
-        <option value="C1">C1</option>
-        <option value="C2">C2</option>
-      </select>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Prueba TICS <span style="font-size:11px;font-weight:400;text-transform:none">(opcional)</span></div>
+      <div class="filter-inputs">
+        <div class="filter-row">
+          <label>Tu nota TICS</label>
+          <input type="number" id="sim-tics" min="0" max="100" step="0.1" placeholder="Ej: 62.5 (mín. 50 para sumar)" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:6px;line-height:1.5">
+        <strong>&lt;50:</strong> no suma · <strong>50:</strong> +3 puestos · <strong>60:</strong> +12 · <strong>70:</strong> +18 · <strong>100:</strong> +28<br>
+        74.7% de la 50ª promoción aprobó TICS (media: 59.6)
+      </div>
     </div>
   </div>
 
   <button onclick="runSimulator()" style="padding:9px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:1rem">Calcular estimación</button>
 
   <div id="sim-result" style="background:#f5f4f0;border-radius:8px;padding:14px;font-size:13px;display:none"></div>
-  </div>
+</div>
 
     <div class="card" style="margin-bottom:1.5rem">
       <div class="section-title">Ranking de ciudades por puntuación ponderada</div>
@@ -592,7 +610,7 @@ function estimateMovement(currentRank, level) {
     else if (currentRank <= 100) base = -15;
     else if (currentRank <= 150) base = -41;
     else if (currentRank <= 200) base = -46;
-    else                         base = -39;
+    else                          base = -39;
     return Math.max(base, -(currentRank - 1));
   }
   if (level === 'C1') {
@@ -601,7 +619,7 @@ function estimateMovement(currentRank, level) {
     else if (currentRank <= 100) base = -56;
     else if (currentRank <= 150) base = -81;
     else if (currentRank <= 200) base = -103;
-    else                         base = -100;
+    else                          base = -100;
     return Math.max(base, -(currentRank - 1));
   }
   if (level === 'C2') {
@@ -611,9 +629,30 @@ function estimateMovement(currentRank, level) {
   return 0;
 }
 
+function estimateTicsMovement(notaTics, currentRank) {
+  // <50 no suma nada
+  if (!notaTics || notaTics < 50) return 0;
+  
+  // Movimiento estimado basado en distribución real de la 50ª promoción
+  // 74.7% aprobaron (media 59.6) → si apruebas con nota media, superas al ~50% del grupo
+  // Escala lineal: nota 50 → +3 puestos, nota 100 → +28 puestos
+  const movBase = Math.round(3 + (notaTics - 50) / 50 * 25);
+  
+  // El efecto es mayor en zona media del ranking (más densidad de competidores)
+  // y menor en los extremos
+  let factor;
+  if (currentRank <= 50)        factor = 0.5;  // arriba ya hay pocos
+  else if (currentRank <= 150)  factor = 1.2;  // zona media, más impacto
+  else if (currentRank <= 250)  factor = 1.0;
+  else                          factor = 0.6;  // abajo también menos densidad
+  
+  return -Math.round(movBase * factor);
+}
+
 function runSimulator() {
   const rankInput = parseInt(document.getElementById('sim-ranking').value);
   const idioma = document.getElementById('sim-idioma').value;
+  const ticsInput = parseFloat(document.getElementById('sim-tics').value);
   const resultEl = document.getElementById('sim-result');
 
   if (!rankInput || rankInput < 1 || rankInput > 300) {
@@ -627,12 +666,24 @@ function runSimulator() {
     return;
   }
 
-  const movement = estimateMovement(rankInput, idioma);
-  const estimatedRank = Math.max(1, Math.min(300, rankInput + movement));
-  const puestos = Math.abs(movement);
-  const color = movement < 0 ? '#27ae60' : movement > 0 ? '#c0392b' : '#888';
-  const arrow = movement < 0 ? '↑' : movement > 0 ? '↓' : '→';
-  const texto = movement < 0 ? `subirías ~${puestos} puestos` : movement > 0 ? `bajarías ~${puestos} puestos` : 'sin cambios estimados';
+  const movIdioma = estimateMovement(rankInput, idioma);
+  const rankAfterIdioma = Math.max(1, Math.min(300, rankInput + movIdioma));
+  
+  const movTics = estimateTicsMovement(ticsInput, rankAfterIdioma);
+  const estimatedRank = Math.max(1, Math.min(300, rankAfterIdioma + movTics));
+
+  const totalMov = estimatedRank - rankInput;
+  const color = totalMov < 0 ? '#27ae60' : totalMov > 0 ? '#c0392b' : '#888';
+  const arrow = totalMov < 0 ? '↑' : totalMov > 0 ? '↓' : '→';
+  const texto = totalMov < 0 ? `subirías ~${Math.abs(totalMov)} puestos en total`
+              : totalMov > 0 ? `bajarías ~${Math.abs(totalMov)} puestos en total`
+              : 'sin cambios estimados';
+
+  // Desglose
+  const idiomaLabel = idioma === 'none' ? 'Sin idioma' : idioma;
+  const ticsLabel = !ticsInput || ticsInput < 50
+    ? 'Sin efecto (<50)'
+    : `Nota ${ticsInput} → ~${Math.abs(movTics)} puestos arriba`;
 
   let citiesReachable = [];
   if (Object.keys(cityStats).length > 0) {
@@ -669,14 +720,32 @@ function runSimulator() {
 
   resultEl.style.display = 'block';
   resultEl.innerHTML = `
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
       <div style="font-size:38px;font-weight:700;color:${color};line-height:1">${arrow} ${estimatedRank}</div>
       <div>
-        <div style="font-size:13px;color:#555">Posición estimada tras idioma</div>
+        <div style="font-size:13px;color:#555">Posición estimada final</div>
         <div style="font-size:12px;color:${color};font-weight:600;margin-top:2px">${texto}</div>
       </div>
     </div>
-    <div style="font-size:12px;color:#888">Posición actual: <strong style="color:#1a1a1a">${rankInput}</strong> → Estimada: <strong style="color:${color}">${estimatedRank}</strong></div>
+    <div style="background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #eee;margin-bottom:8px">
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Desglose</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:#555">Posición actual</span>
+        <strong>${rankInput}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:#555">Idioma (${idiomaLabel})</span>
+        <strong style="color:${movIdioma<=0?'#27ae60':'#c0392b'}">${movIdioma<=0?'':'+'}${movIdioma} puestos → ${rankAfterIdioma}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:#555">TICS</span>
+        <strong style="color:${movTics<0?'#27ae60':'#888'}">${movTics<0?`${movTics} puestos → ${estimatedRank}`:'Sin efecto'}</strong>
+      </div>
+      <div style="border-top:1px solid #eee;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-size:13px">
+        <span style="font-weight:600">Posición estimada</span>
+        <strong style="color:${color}">${estimatedRank}</strong>
+      </div>
+    </div>
     ${citiesHtml}`;
 }
 loadData();
