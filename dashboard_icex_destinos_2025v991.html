@@ -213,8 +213,8 @@ canvas { max-height: 240px; }
         </div>
       </div>
       <div style="font-size:11px;color:#888;margin-top:6px;line-height:1.5">
-        <strong>&lt;50:</strong> no suma · <strong>50:</strong> +3 puestos · <strong>60:</strong> +12 · <strong>70:</strong> +18 · <strong>100:</strong> +28<br>
-        74.7% de la 50ª promoción aprobó TICS (media: 59.6)
+        <strong>&lt;50:</strong> ~-8 a -16 puestos (bajas) · <strong>50:</strong> +3 · <strong>60:</strong> +12 · <strong>70:</strong> +18 · <strong>100:</strong> +28<br>
+74.7% de la 50ª promoción aprobó TICS (media: 59.6)
       </div>
     </div>
   </div>
@@ -630,22 +630,29 @@ function estimateMovement(currentRank, level) {
 }
 
 function estimateTicsMovement(notaTics, currentRank) {
-  // <50 no suma nada
-  if (!notaTics || notaTics < 50) return 0;
-  
-  // Movimiento estimado basado en distribución real de la 50ª promoción
-  // 74.7% aprobaron (media 59.6) → si apruebas con nota media, superas al ~50% del grupo
-  // Escala lineal: nota 50 → +3 puestos, nota 100 → +28 puestos
-  const movBase = Math.round(3 + (notaTics - 50) / 50 * 25);
-  
-  // El efecto es mayor en zona media del ranking (más densidad de competidores)
-  // y menor en los extremos
+  // Sin nota introducida → no calculamos efecto TICS
+  if (isNaN(notaTics) || notaTics === null || notaTics === undefined || document.getElementById('sim-tics').value === '') return 0;
+
+  // Factor de densidad según zona del ranking
+  // (más impacto en zona media donde hay más competidores por punto)
   let factor;
-  if (currentRank <= 50)        factor = 0.5;  // arriba ya hay pocos
-  else if (currentRank <= 150)  factor = 1.2;  // zona media, más impacto
+  if (currentRank <= 50)        factor = 0.5;
+  else if (currentRank <= 150)  factor = 1.2;
   else if (currentRank <= 250)  factor = 1.0;
-  else                          factor = 0.6;  // abajo también menos densidad
-  
+  else                          factor = 0.6;
+
+  if (notaTics < 50) {
+    // SUSPENSO o NO PRESENTADO:
+    // El 74.7% del grupo aprobó con media ~+0.29 pts extra
+    // Tú te quedas en 0 → pierdes posiciones relativas
+    // Estimamos ~12-15 puestos de bajada en zona media
+    const drop = Math.round(13 * factor);
+    return Math.min(drop, 300 - currentRank); // no puede pasar de 300
+  }
+
+  // APROBADO: sube puestos respecto a los suspensos
+  // Escala: nota 50 → +3 puestos, nota 100 → +28 puestos
+  const movBase = Math.round(3 + (notaTics - 50) / 50 * 25);
   return -Math.round(movBase * factor);
 }
 
