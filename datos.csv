@@ -55,6 +55,7 @@ Timestamp,Ranking,1ª Preferencia,2ª Preferencia,3ª Preferencia
 2026-04-21T17:22:14.804Z,91-100,Roma,La Haya,Casablanca
 2026-04-21T17:25:26.992Z,41-50,Bangkok,Ho Chi Minh,Kuala Lumpur
 2026-04-21T17:28:05.847Z,131-140,Buenos Aires,Chicago,México
+,,,,
 2026-04-21T17:45:23.217Z,1-10,Singapur,Sidney,Bangkok
 2026-04-21T17:45:35.098Z,71-80,Hong Kong,Shanghái,Kuala Lumpur
 2026-04-21T17:53:19.324Z,121-130,São Paulo,Brasilia,Bogotá
@@ -69,3 +70,13 @@ Timestamp,Ranking,1ª Preferencia,2ª Preferencia,3ª Preferencia
 2026-04-22T07:28:46.334Z,271-280,Kuala Lumpur,Santiago de Chile,Buenos Aires
 2026-04-22T07:31:14.080Z,151-160,Santo Domingo,Ottawa,San Juan
 2026-04-22T08:54:23.485Z,111-120,Toronto,Ottawa,Houston
+2026-04-22T10:42:30.576Z,61-70,Abidyán,Túnez,Dakar
+2026-04-22T16:17:02.356Z,61-70,Hong Kong,Ottawa,Sidney
+2026-04-22T23:34:24.708Z,251-260,Bangkok,San Juan,Atenas
+2026-04-23T07:50:08.427Z,11-20,Ho Chi Minh,Kuala Lumpur,Hong Kong
+2026-04-23T09:33:33.448Z,31-40,Casablanca,Abidyán,El Cairo
+2026-04-23T09:35:25.122Z,11-20,Casablanca,París,Rabat
+2026-04-23T09:44:09.346Z,91-100,San Juan,Buenos Aires,Manila
+2026-04-23T09:46:52.375Z,201-210,Dublín,Atenas,Oslo
+2026-04-23T09:48:57.804Z,221-230,Berlín,Düsseldorf,Atenas
+2026-04-23T10:01:06.968Z,101-110,Copenhague,Helsinki,Londres
